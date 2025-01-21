@@ -14,6 +14,10 @@ from diffusers.models import FlaxAutoencoderKL, FlaxUNet2DConditionModel
 from flax.core.frozen_dict import FrozenDict
 from flax.training.train_state import TrainState
 from jax.lax import with_sharding_constraint as wsc
+from jax.sharding import PartitionSpec, NamedSharding
+from jax.experimental import mesh_utils
+import orbax.checkpoint
+from orbax.checkpoint import PyTreeCheckpointer, RestoreArgs
 from transformers import CLIPTokenizer, FlaxCLIPTextModel
 
 import wandb
@@ -183,7 +187,6 @@ def create_sample_fn(
     if (
         os.path.exists(path)
         and os.path.isdir(path)
-        and "checkpoint" in os.listdir(path)
     ):
         # this is an orbax checkpoint
         assert wandb_run_name is not None
@@ -193,7 +196,9 @@ def create_sample_fn(
         config = ml_collections.ConfigDict(run.config)
 
         # load params
+        print('**********************Load susie generator param**********************')
         params = orbax.checkpoint.PyTreeCheckpointer().restore(path, item=None)
+        print('**********************Load finish**********************')
         assert "params_ema" not in params
 
         # load model
@@ -229,10 +234,11 @@ def create_sample_fn(
         nonlocal rng
 
         image = image / 127.5 - 1.0
-        image = image[None]
-        assert image.shape == (1, 256, 256, 3)
+        # image = image[None]
+        # assert image.shape == (1, 256, 256, 3)
 
-        prompt_embeds = text_encode(tokenize([prompt]))
+        # prompt_embeds = text_encode(tokenize([prompt]))
+        prompt_embeds = text_encode(tokenize(prompt))
 
         # encode stuff
         rng, encode_rng = jax.random.split(rng)
@@ -249,11 +255,11 @@ def create_sample_fn(
             context_w=context_w,
             eta=eta,
             uncond_y=jnp.zeros_like(contexts),
-            uncond_prompt_embeds=uncond_prompt_embed,
+            uncond_prompt_embeds=jnp.broadcast_to(uncond_prompt_embed, prompt_embeds.shape),
         )
         samples = vae_decode(samples)
         samples = jnp.clip(jnp.round(samples * 127.5 + 127.5), 0, 255).astype(jnp.uint8)
 
-        return jax.device_get(samples[0])
+        return jax.device_get(samples)
 
     return sample

@@ -250,7 +250,7 @@ def main(_):
             )
 
     checkpointer = orbax.checkpoint.CheckpointManager(
-        logdir,
+        os.path.abspath(logdir),
         checkpointers={
             "state": orbax.checkpoint.PyTreeCheckpointer(),
             "params_ema": orbax.checkpoint.PyTreeCheckpointer(),
@@ -524,7 +524,8 @@ def main(_):
             while not data or len(data["curr"]) < config.sample.num_contexts:
                 batch = next(val_loader)
                 batch = multihost_utils.process_allgather(batch)
-                for key in {"curr", "goals", "prompt_ids"}.intersection(batch.keys()):
+                batch = jax.tree_map(lambda x: x[0] if x.shape[0] == 1 else x, batch)
+                for key in {"curr", "goals", "prompt_ids", "subgoals"}.intersection(batch.keys()):
                     data[key].extend(batch[key])
             data = {k: np.array(v) for k, v in data.items()}
 
@@ -583,7 +584,10 @@ def main(_):
             )
             left = eo.rearrange(contexts, "n h w (x c) -> (n h) (x w) c", c=3)
 
-            final_image = np.concatenate([left, right], axis=1)
+            gt_predict = eo.rearrange(data["subgoals"], "n h w (x c) -> (n h) (x w) c", c=3)
+            curr = eo.rearrange(data["curr"], "n h w (x c) -> (n h) (x w) c", c=3)
+
+            final_image = np.concatenate([curr, left, gt_predict, right], axis=1)
             final_image = np.clip(np.round(final_image * 127.5 + 127.5), 0, 255).astype(
                 np.uint8
             )
@@ -611,6 +615,7 @@ def main(_):
                         },
                         step=step + 1,
                     )
+
 
         if (step + 1) % config.save_interval == 0:
             checkpointer.save(

@@ -24,8 +24,8 @@ def base():
 
     config.wandb_resume_id = None
 
-    config.vae = "runwayml/stable-diffusion-v1-5:flax"
-    config.text_encoder = "runwayml/stable-diffusion-v1-5:flax"
+    config.vae = "/home/user/.cache/huggingface/hub/models--runwayml--stable-diffusion-v1-5/snapshots/ba3e4bb1bac6871f4bd33c4a4453acb9813477e7:flax"
+    config.text_encoder = "/home/user/.cache/huggingface/hub/models--runwayml--stable-diffusion-v1-5/snapshots/ba3e4bb1bac6871f4bd33c4a4453acb9813477e7:flax"
 
     # ema
     config.ema = ema = ConfigDict()
@@ -66,7 +66,7 @@ def base():
 
     # data
     config.data = ConfigDict()
-    config.data.batch_size = 128
+    config.data.batch_size = 64
 
     data_base = ConfigDict()
     data_base.image_size = 256
@@ -78,14 +78,11 @@ def base():
         random_saturation=[0.95, 1.05],
         random_hue=[0.025],
         augment_order=[
-            # "random_flip_left_right",
             # "random_resized_crop",
             # "random_brightness",
             # "random_contrast",
             # "random_saturation",
             # "random_hue",
-            # "random_flip_up_down",
-            # "random_rot90",
         ],
     )
 
@@ -98,14 +95,32 @@ def base():
     #     truncate=True,
     # )
 
-    config.data.bridge = bridge = deepcopy(data_base)
-    bridge.weight = 45.0
-    bridge.data_path = ""
-    bridge.goal_relabeling_fn = "subgoal_only"
-    bridge.goal_relabeling_kwargs = dict(
+    # config.data.libero = libero = deepcopy(data_base)
+    # libero.weight = 1.0
+    # libero.data_path = "/data/libero/libero_10/tfrecord"
+    # libero.goal_relabeling_fn = "subgoal_only"
+    # libero.goal_relabeling_kwargs = dict(
+    #     subgoal_delta=(20, 21),
+    #     truncate=False,
+    # )
+
+    config.data.airbot = airbot = deepcopy(data_base)
+    airbot.weight = 1.0
+    airbot.data_path = "/data/rsp_data/airbot_tf/tfrecord"
+    airbot.goal_relabeling_fn = "subgoal_only"
+    airbot.goal_relabeling_kwargs = dict(
         subgoal_delta=(11, 14),
         truncate=False,
     )
+
+    # config.data.bridge = bridge = deepcopy(data_base)
+    # bridge.weight = 45.0
+    # bridge.data_path = ""
+    # bridge.goal_relabeling_fn = "subgoal_only"
+    # bridge.goal_relabeling_kwargs = dict(
+    #     subgoal_delta=(11, 14),
+    #     truncate=False,
+    # )
 
     # config.data.calvin = calvin = deepcopy(data_base)
     # calvin.weight = 15.0
@@ -116,19 +131,19 @@ def base():
     #     truncate=False,
     # )
 
-    config.data.somethingsomething = somethingsomething = deepcopy(data_base)
-    somethingsomething.weight = 75.0
-    somethingsomething.data_path = ""
-    somethingsomething.goal_relabeling_fn = "subgoal_only"
-    somethingsomething.goal_relabeling_kwargs = dict(
-        subgoal_delta=(11, 14),
-        truncate=False,
-    )
+    # config.data.somethingsomething = somethingsomething = deepcopy(data_base)
+    # somethingsomething.weight = 75.0
+    # somethingsomething.data_path = ""
+    # somethingsomething.goal_relabeling_fn = "subgoal_only"
+    # somethingsomething.goal_relabeling_kwargs = dict(
+    #     subgoal_delta=(11, 14),
+    #     truncate=False,
+    # )
 
     # model
     config.model = model = ConfigDict()
     config.model.pretrained = "kvablack/instruct-pix2pix-flax"
-
+    # config.model.pretrained = None
     return config
 
 
@@ -141,8 +156,8 @@ def debug():
     config.sample_interval = 10
     config.num_val_batches = 4
 
-    config.vae = "runwayml/stable-diffusion-v1-5:flax"
-    config.text_encoder = "runwayml/stable-diffusion-v1-5:flax"
+    config.vae = "~/.cache/huggingface/hub/models--runwayml--stable-diffusion-v1-5:flax"
+    config.text_encoder = "~/.cache/huggingface/hub/models--runwayml--stable-diffusion-v1-5:flax"
 
     config.sample.num_contexts = 4
     config.sample.num_samples_per_context = 4

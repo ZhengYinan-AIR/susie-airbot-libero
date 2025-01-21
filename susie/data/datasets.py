@@ -44,7 +44,21 @@ class Transforms:
     @staticmethod
     def somethingsomething(x: Dict[str, Any]) -> Dict[str, Any]:
         return x
+    
+    @staticmethod
+    def libero(x: Dict[str, Any]) -> Dict[str, Any]:
+        x["obs"] = x.pop("images")
+        x["lang"] = x.pop("language_annotation")
 
+        del x["actions"]
+        del x["states"]
+        del x["wrist_images"]
+
+        return x
+
+    @staticmethod
+    def airbot(x: Dict[str, Any]) -> Dict[str, Any]:
+        return x
 
 class GetPaths:
     """Retrieves paths to TFRecord files or each dataset"""
@@ -72,6 +86,13 @@ class GetPaths:
         else:
             return tf.io.gfile.glob(f"{data_path}/validation/D/*")
 
+    @staticmethod
+    def libero(data_path: str, train: bool) -> List[str]:
+        return f"{data_path}/{'train' if train else 'val'}"
+    
+    @staticmethod
+    def airbot(data_path: str, train: bool) -> List[str]:
+        return f"{data_path}/{'train' if train else 'val'}"
 
 def make_dataset(
     name: str,
@@ -125,7 +146,7 @@ def make_dataset(
         partial(
             dl.transforms.selective_tree_map,
             match=["curr", "goals", "subgoals"],
-            map_fn=lambda v: v / 127.5 - 1.0,
+            map_fn=lambda v: tf.cast(v, tf.float32) / 127.5 - 1.0,
         )
     )
 
